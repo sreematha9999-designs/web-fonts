@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OWOF Deck Builder — Progress Report PPT Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.min.js"></script>
+<style>
+  :root{
+    --cream:#FBF5E2; --card:#FFFDF4; --maroon:#8B1414; --dmaroon:#6E0E0E;
+    --gold:#C9A227; --golddk:#A8861B; --ink:#3B3B3B; --muted:#7a7468; --line:#E5D9A8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--cream); color:var(--ink); font:14px/1.5 "Segoe UI", system-ui, Arial, sans-serif;}
+  h1,h2,h3,.serif{font-family:Georgia, "Times New Roman", serif;}
+
+  /* header */
+  header{background:var(--maroon); color:#fff; padding:14px 22px; display:flex; align-items:center; gap:14px; border-bottom:3px solid var(--gold);}
+  .mark{width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid var(--gold);flex:none;}
+  header .t1{font-size:19px; letter-spacing:.3px;}
+  header .t2{font-size:11px; color:var(--gold); font-weight:600; letter-spacing:.12em; text-transform:uppercase;}
+  header .grow{flex:1;}
+  .btn{border:1.5px solid var(--gold); background:transparent; color:#fff; padding:8px 14px; border-radius:7px; cursor:pointer; font-weight:600; font-size:13px;}
+  .btn:hover{background:rgba(255,255,255,.08);}
+  .btn:focus-visible{outline:3px solid #fff; outline-offset:2px;}
+  .btn.gold{background:var(--gold); border-color:var(--gold); color:#fff;}
+  .btn.gold:hover{background:var(--golddk);}
+  .btn.ghost{color:var(--maroon); border-color:var(--maroon);}
+  .btn.ghost:hover{background:rgba(139,20,20,.06);}
+
+  main{display:grid; grid-template-columns:330px 1fr; gap:0; min-height:calc(100vh - 64px);}
+  @media (max-width:860px){ main{grid-template-columns:1fr;} }
+
+  /* slide tray */
+  .tray{border-right:1px solid var(--line); padding:16px; background:#F6EFD9;}
+  .tray h2{font-size:14px; color:var(--dmaroon); margin-bottom:10px; letter-spacing:.04em;}
+  .addrow{display:flex; gap:8px; margin-bottom:14px;}
+  select,input[type=text],textarea{width:100%; background:var(--card); border:1px solid var(--line); border-radius:6px; padding:8px 10px; font:inherit; color:var(--ink);}
+  select:focus,input:focus,textarea:focus{outline:2px solid var(--gold);}
+  .slidecard{display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-left:6px solid var(--maroon); border-radius:8px; padding:9px 10px; margin-bottom:8px; cursor:pointer;}
+  .slidecard.sel{border-color:var(--gold); border-left-color:var(--gold); box-shadow:0 2px 8px rgba(139,20,20,.12);}
+  .slidecard .num{font-family:Georgia,serif; font-size:15px; color:var(--gold); font-weight:700; width:24px; text-align:right;}
+  .slidecard .label{flex:1; min-width:0;}
+  .slidecard .label .ty{font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);}
+  .slidecard .label .nm{font-weight:600; color:var(--dmaroon); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .mini{display:flex; gap:4px;}
+  .mini button{border:none; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 4px; border-radius:4px;}
+  .mini button:hover{color:var(--maroon); background:rgba(139,20,20,.08);}
+  .empty{color:var(--muted); font-style:italic; padding:18px 6px; text-align:center;}
+
+  /* editor */
+  .editor{padding:22px 26px; max-width:880px;}
+  .editor h2{color:var(--dmaroon); font-size:20px; margin-bottom:4px;}
+  .editor .sub{color:var(--muted); margin-bottom:18px; font-size:13px;}
+  fieldset{border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:16px; background:var(--card);}
+  legend{padding:0 8px; color:var(--maroon); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.08em;}
+  label{display:block; font-size:12px; font-weight:600; color:var(--muted); margin:10px 0 4px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:0 16px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 16px;}
+  .rowline{display:grid; gap:8px; margin-bottom:8px; align-items:center;}
+  .rowline.t4{grid-template-columns:60px 1.4fr 100px 2fr 30px;}
+  .rowline.t3{grid-template-columns:2fr 140px 2fr 30px;}
+  .rowline.t2{grid-template-columns:1fr 1.6fr 30px;}
+  .rowline input, .rowline select{padding:6px 8px; font-size:13px;}
+  .delrow{border:none; background:none; color:var(--muted); cursor:pointer; font-size:15px;}
+  .delrow:hover{color:var(--maroon);}
+  .addbtn{margin-top:6px; font-size:12px; padding:6px 10px;}
+  .imgslot{display:flex; align-items:center; gap:12px; margin-top:6px;}
+  .imgslot img{height:54px; border:2px solid var(--gold); border-radius:6px; background:#fff;}
+  .hint{font-size:12px; color:var(--muted); margin-top:6px;}
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+  footer{padding:14px 22px; color:var(--muted); font-size:12px; border-top:1px solid var(--line);}
+  .statusmsg{color:var(--maroon); font-weight:600; margin-left:8px;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mark" aria-hidden="true"></div>
+  <div>
+    <div class="t1 serif">OWOF Deck Builder</div>
+    <div class="t2">One World One Family Mission · Progress Reports</div>
+  </div>
+  <div class="grow"></div>
+  <button class="btn" id="btnSample">Load sample deck</button>
+  <button class="btn" id="btnExport">Save work (.json)</button>
+  <button class="btn" id="btnImport">Open saved work</button>
+  <input type="file" id="importFile" accept=".json" hidden>
+  <button class="btn gold" id="btnGen">Download PPTX</button>
+  <span class="statusmsg" id="msg" role="status"></span>
+</header>
+
+<main>
+  <!-- ============ SLIDE TRAY ============ -->
+  <aside class="tray" aria-label="Slides">
+    <h2 class="serif">Slides in this deck</h2>
+    <div class="addrow">
+      <select id="newType" aria-label="Slide type to add">
+        <option value="hero">Cover — full-page image</option>
+        <option value="divider">Project divider (number + stats)</option>
+        <option value="overview">Project overview</option>
+        <option value="table">Progress table</option>
+        <option value="fin">Financial table (auto total)</option>
+        <option value="photos">Photo slide (2 photos)</option>
+        <option value="thanks">Thank you</option>
+      </select>
+      <button class="btn ghost" id="btnAdd">Add</button>
+    </div>
+    <div id="tray"></div>
+  </aside>
+
+  <!-- ============ EDITOR ============ -->
+  <section class="editor">
+    <div id="editor"><p class="empty">Add a slide on the left, or load the sample deck to start from your June 2026 structure.</p></div>
+  </section>
+</main>
+
+<footer>
+  Everything runs in your browser — no server, no API, content and photos never leave this page.
+  Save your work as a .json file to continue later. Host this single file on GitHub Pages to use it anywhere.
+</footer>
+
+<script>
+"use strict";
+/* ====================== THEME ====================== */
+const TH = { CREAM:"FBF5E2", MAROON:"8B1414", DMAROON:"7A0E0E", GOLD:"C9A227",
+  CARD:"FFFDF4", INK:"3B3B3B", MUTED:"6E6E6E", GRAY:"8F8F8F",
+  GREEN:"2E7D32", AMBER:"C07600", F:"Arial",
+  TB:{pt:0.75,color:"C9A227"},
+  shadow:()=>({type:"outer",color:"000000",blur:5,offset:2,angle:45,opacity:0.16}) };
+
+/* ====================== STATE ====================== */
+let slides = [];          // array of slide objects {type, ...fields}
+let selected = -1;        // index of slide being edited
+
+/* default slide payloads */
+const DEFAULTS = {
+  hero:    ()=>({type:"hero", num:"01", name:"PROJECT NAME", sub:"Subtitle · Month 2026", img:null}),
+  divider: ()=>({type:"divider", num:"01", name:"Project Name", sub:"Subtitle · Project Progress Report · Month 2026",
+                 stats:[{v:"xx%",l:"Overall Progress"},{v:"xx",l:"Key fact"},{v:"xx",l:"Next milestone"}]}),
+  overview:()=>({type:"overview", title:"Project Overview", sub:"Project Name · Month 2026",
+                 stats:[{v:"xx",l:"Built-up Area"},{v:"Rs. xx Cr",l:"Approved Budget"},{v:"Rs. xx Cr",l:"Spent"},{v:"xx Months",l:"Duration"}],
+                 para:"Short description of the project.", band1:"CURRENT STAGE: …", band2:"Next milestone: …"}),
+  table:   ()=>({type:"table", title:"Progress Update", sub:"Project Name · Month 2026", overall:"xx% Complete",
+                 rows:[{item:"Work item",status:"In Progress",remarks:""}], stage:"", milestone:""}),
+  fin:     ()=>({type:"fin", title:"Financial Table", sub:"Project Name · Month 2026", note:"",
+                 rows:[{sl:"1",part:"Civil Works",amt:"",works:""}]}),
+  photos:  ()=>({type:"photos", title:"Photo Slide", sub:"Project Name · Month 2026", caption:"", img1:null, img2:null}),
+  thanks:  ()=>({type:"thanks", line1:"One World One Family Mission", line2:"All Projects — Progress Report · June 2026"}),
+};
+const TYPENAMES = {hero:"Cover", divider:"Divider", overview:"Overview", table:"Progress table", fin:"Financial", photos:"Photos", thanks:"Thank you"};
+
+/* ====================== TRAY ====================== */
+const trayEl = document.getElementById("tray");
+function slideLabel(s){
+  return s.name || s.title || (s.type==="thanks" ? "Thank You" : TYPENAMES[s.type]);
+}
+function renderTray(){
+  trayEl.innerHTML = "";
+  if(!slides.length){ trayEl.innerHTML = '<p class="empty">No slides yet.</p>'; return; }
+  slides.forEach((s,i)=>{
+    const d = document.createElement("div");
+    d.className = "slidecard" + (i===selected ? " sel" : "");
+    d.innerHTML = '<div class="num">'+(i+1)+'</div>'+
+      '<div class="label"><div class="ty">'+TYPENAMES[s.type]+'</div><div class="nm"></div></div>'+
+      '<div class="mini">'+
+      '<button title="Move up" aria-label="Move up">&#9650;</button>'+
+      '<button title="Move down" aria-label="Move down">&#9660;</button>'+
+      '<button title="Duplicate" aria-label="Duplicate">&#10697;</button>'+
+      '<button title="Delete" aria-label="Delete">&#10005;</button></div>';
+    d.querySelector(".nm").textContent = slideLabel(s);
+    d.addEventListener("click", ()=>{ selected=i; renderTray(); renderEditor(); });
+    const [up,down,dup,del] = d.querySelectorAll(".mini button");
+    up.onclick   = e=>{e.stopPropagation(); if(i>0){[slides[i-1],slides[i]]=[slides[i],slides[i-1]]; if(selected===i)selected=i-1; renderTray();}};
+    down.onclick = e=>{e.stopPropagation(); if(i<slides.length-1){[slides[i+1],slides[i]]=[slides[i],slides[i+1]]; if(selected===i)selected=i+1; renderTray();}};
+    dup.onclick  = e=>{e.stopPropagation(); slides.splice(i+1,0,JSON.parse(JSON.stringify(s))); renderTray();};
+    del.onclick  = e=>{e.stopPropagation(); slides.splice(i,1); if(selected>=slides.length)selected=slides.length-1; renderTray(); renderEditor();};
+    trayEl.appendChild(d);
+  });
+}
+document.getElementById("btnAdd").onclick = ()=>{
+  const t = document.getElementById("newType").value;
+  slides.push(DEFAULTS[t]());
+  selected = slides.length-1;
+  renderTray(); renderEditor();
+};
+
+/* ====================== EDITOR ====================== */
+const ed = document.getElementById("editor");
+function fld(label, value, key, obj, opts){
+  const o = opts||{};
+  const id = "f"+Math.random().toString(36).slice(2,8);
+  const wrap = document.createElement("div");
+  wrap.innerHTML = '<label for="'+id+'">'+label+'</label>';
+  let inp;
+  if(o.area){ inp=document.createElement("textarea"); inp.rows=o.rows||3; }
+  else { inp=document.createElement("input"); inp.type="text"; }
+  inp.id=id; inp.value = value==null?"":value;
+  inp.addEventListener("input", ()=>{ obj[key]=inp.value; renderTray(); });
+  wrap.appendChild(inp);
+  return wrap;
+}
+function imgField(label, key, obj){
+  const wrap = document.createElement("div");
+  wrap.innerHTML = '<label>'+label+'</label>';
+  const slot = document.createElement("div"); slot.className="imgslot";
+  const file = document.createElement("input"); file.type="file"; file.accept="image/*";
+  const prev = document.createElement("img"); prev.alt="preview"; if(obj[key]) prev.src=obj[key]; else prev.style.display="none";
+  const clr = document.createElement("button"); clr.className="btn ghost"; clr.type="button"; clr.textContent="Remove"; clr.style.display = obj[key]?"":"none";
+  file.addEventListener("change", ()=>{
+    const f = file.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{ obj[key]=r.result; prev.src=r.result; prev.style.display=""; clr.style.display=""; };
+    r.readAsDataURL(f);
+  });
+  clr.onclick = ()=>{ obj[key]=null; prev.style.display="none"; clr.style.display="none"; file.value=""; };
+  slot.append(file, prev, clr);
+  wrap.appendChild(slot);
+  return wrap;
+}
+function fieldset(title){ const fs=document.createElement("fieldset"); fs.innerHTML='<legend>'+title+'</legend>'; return fs; }
+
+function renderEditor(){
+  ed.innerHTML="";
+  if(selected<0 || !slides[selected]){ ed.innerHTML='<p class="empty">Select a slide on the left to edit it.</p>'; return; }
+  const s = slides[selected];
+  const head=document.createElement("div");
+  head.innerHTML='<h2 class="serif">Slide '+(selected+1)+' — '+TYPENAMES[s.type]+'</h2><p class="sub">Changes save automatically. Use “Download PPTX” when the deck is ready.</p>';
+  ed.appendChild(head);
+
+  if(s.type==="hero"){
+    const fs=fieldset("Cover content");
+    const g=document.createElement("div"); g.className="grid3";
+    g.append(fld("Project number (e.g. 01)", s.num, "num", s),
+             fld("Project name", s.name, "name", s),
+             fld("Subtitle line", s.sub, "sub", s));
+    fs.appendChild(g);
+    fs.appendChild(imgField("Full-page 3D view / photo (fills the slide)", "img", s));
+    fs.insertAdjacentHTML("beforeend",'<p class="hint">Wide (16:9-ish) images look best — the image is cropped to fill the page, with a slim maroon name strip at the bottom.</p>');
+    ed.appendChild(fs);
+  }
+
+  if(s.type==="divider"){
+    const fs=fieldset("Divider content");
+    const g=document.createElement("div"); g.className="grid3";
+    g.append(fld("Project number", s.num, "num", s), fld("Project name", s.name, "name", s), fld("Subtitle line", s.sub, "sub", s));
+    fs.appendChild(g); ed.appendChild(fs);
+    const fs2=fieldset("Three stat cards");
+    s.stats.forEach((st)=>{
+      const r=document.createElement("div"); r.className="rowline t2";
+      const a=document.createElement("input"); a.value=st.v; a.placeholder="Big value"; a.oninput=()=>st.v=a.value;
+      const b=document.createElement("input"); b.value=st.l; b.placeholder="Small label"; b.oninput=()=>st.l=b.value;
+      r.append(a,b,document.createElement("span"));
+      fs2.appendChild(r);
+    });
+    ed.appendChild(fs2);
+  }
+
+  if(s.type==="overview"){
+    const fs=fieldset("Header");
+    const g=document.createElement("div"); g.className="grid2";
+    g.append(fld("Title", s.title, "title", s), fld("Subtitle line", s.sub, "sub", s));
+    fs.appendChild(g); ed.appendChild(fs);
+    const fs2=fieldset("Four stat cards");
+    s.stats.forEach((st)=>{
+      const r=document.createElement("div"); r.className="rowline t2";
+      const a=document.createElement("input"); a.value=st.v; a.oninput=()=>st.v=a.value;
+      const b=document.createElement("input"); b.value=st.l; b.oninput=()=>st.l=b.value;
+      r.append(a,b,document.createElement("span"));
+      fs2.appendChild(r);
+    });
+    ed.appendChild(fs2);
+    const fs3=fieldset("Description & highlight band");
+    fs3.append(fld("Paragraph", s.para, "para", s, {area:true,rows:4}),
+               fld("Band line 1 (gold, caps)", s.band1, "band1", s),
+               fld("Band line 2 (white)", s.band2, "band2", s));
+    ed.appendChild(fs3);
+  }
+
+  if(s.type==="table"){
+    const fs=fieldset("Header");
+    const g=document.createElement("div"); g.className="grid3";
+    g.append(fld("Title", s.title, "title", s), fld("Subtitle line", s.sub, "sub", s), fld("Overall progress", s.overall, "overall", s));
+    fs.appendChild(g); ed.appendChild(fs);
+    const fs2=fieldset("Rows — work item / status / remarks");
+    s.rows.forEach((row,ri)=>{
+      const r=document.createElement("div"); r.className="rowline t3";
+      const a=document.createElement("input"); a.value=row.item; a.placeholder="Work item"; a.oninput=()=>row.item=a.value;
+      const sel=document.createElement("select");
+      ["Completed","In Progress","Not Started"].forEach(v=>{const o=document.createElement("option");o.textContent=v;o.value=v;if(row.status===v)o.selected=true;sel.appendChild(o);});
+      sel.onchange=()=>row.status=sel.value;
+      const c=document.createElement("input"); c.value=row.remarks; c.placeholder="Remarks"; c.oninput=()=>row.remarks=c.value;
+      const x=document.createElement("button"); x.className="delrow"; x.textContent="✕"; x.title="Delete row";
+      x.onclick=()=>{s.rows.splice(ri,1); renderEditor();};
+      r.append(a,sel,c,x); fs2.appendChild(r);
+    });
+    const add=document.createElement("button"); add.className="btn ghost addbtn"; add.textContent="+ Add row";
+    add.onclick=()=>{s.rows.push({item:"",status:"In Progress",remarks:""}); renderEditor();};
+    fs2.appendChild(add); ed.appendChild(fs2);
+    const fs3=fieldset("Footer lines");
+    fs3.append(fld("Current stage", s.stage, "stage", s), fld("Next milestone", s.milestone, "milestone", s));
+    ed.appendChild(fs3);
+  }
+
+  if(s.type==="fin"){
+    const fs=fieldset("Header");
+    const g=document.createElement("div"); g.className="grid2";
+    g.append(fld("Title (e.g. C: Payments of Pending Vendors)", s.title, "title", s), fld("Subtitle line", s.sub, "sub", s));
+    fs.appendChild(g); ed.appendChild(fs);
+    const fs2=fieldset("Rows — the TOTAL is calculated automatically from the Amount column");
+    s.rows.forEach((row,ri)=>{
+      const r=document.createElement("div"); r.className="rowline t4";
+      const a=document.createElement("input"); a.value=row.sl; a.placeholder="SL"; a.oninput=()=>row.sl=a.value;
+      const b=document.createElement("input"); b.value=row.part; b.placeholder="Particulars"; b.oninput=()=>row.part=b.value;
+      const c=document.createElement("input"); c.value=row.amt; c.placeholder="Amount"; c.oninput=()=>row.amt=c.value;
+      const d2=document.createElement("input"); d2.value=row.works; d2.placeholder="Works related to"; d2.oninput=()=>row.works=d2.value;
+      const x=document.createElement("button"); x.className="delrow"; x.textContent="✕"; x.title="Delete row";
+      x.onclick=()=>{s.rows.splice(ri,1); renderEditor();};
+      r.append(a,b,c,d2,x); fs2.appendChild(r);
+    });
+    const add=document.createElement("button"); add.className="btn ghost addbtn"; add.textContent="+ Add row";
+    add.onclick=()=>{s.rows.push({sl:"",part:"",amt:"",works:""}); renderEditor();};
+    fs2.appendChild(add);
+    fs2.insertAdjacentHTML("beforeend",'<p class="hint">Amounts that are numbers (e.g. 1500 or 1,012) are summed; anything else (e.g. xx) makes the total show “xx + …”.</p>');
+    ed.appendChild(fs2);
+    const fs3=fieldset("Note (optional)");
+    fs3.append(fld("Shown below the table", s.note, "note", s));
+    ed.appendChild(fs3);
+  }
+
+  if(s.type==="photos"){
+    const fs=fieldset("Header");
+    const g=document.createElement("div"); g.className="grid2";
+    g.append(fld("Title (e.g. Wing 1)", s.title, "title", s), fld("Subtitle line", s.sub, "sub", s));
+    fs.appendChild(g);
+    fs.append(fld("Caption (optional, italic line)", s.caption, "caption", s));
+    ed.appendChild(fs);
+    const fs2=fieldset("Photos (gold border applied automatically)");
+    fs2.appendChild(imgField("Photo 1 (left)", "img1", s));
+    fs2.appendChild(imgField("Photo 2 (right)", "img2", s));
+    ed.appendChild(fs2);
+  }
+
+  if(s.type==="thanks"){
+    const fs=fieldset("Thank-you slide");
+    fs.append(fld("Line under THANK YOU (gold)", s.line1, "line1", s),
+              fld("Second line (white)", s.line2, "line2", s));
+    ed.appendChild(fs);
+  }
+}
+
+/* ====================== PPTX GENERATION ====================== */
+function logoChip(pres,s,dark){
+  s.addShape(pres.shapes.OVAL,{x:8.52,y:0.26,w:0.34,h:0.34,fill:{color:dark?"FFFFFF":TH.MAROON},line:{color:TH.GOLD,width:1.5}});
+  s.addText([{text:"ONE WORLD",options:{breakLine:true}},{text:"ONE FAMILY",options:{breakLine:true}},{text:"MISSION"}],
+    {x:8.92,y:0.22,w:1.05,h:0.45,fontFace:TH.F,fontSize:7,bold:true,color:dark?"FFFFFF":TH.MAROON,margin:0,lineSpacing:8});
+}
+function header(pres,s,title,sub){
+  logoChip(pres,s,false);
+  const t=(title||"").toUpperCase();
+  const fsz = t.length>44?17 : t.length>38?19 : 23;
+  s.addText(t,{x:0.45,y:0.22,w:7.9,h:0.5,fontFace:TH.F,fontSize:fsz,bold:true,color:TH.DMAROON,margin:0,valign:"middle"});
+  if(sub) s.addText(sub,{x:0.45,y:0.7,w:9.1,h:0.3,fontFace:TH.F,fontSize:11.5,color:TH.INK,margin:0,valign:"middle"});
+}
+const hcell=(t,o)=>({text:t,options:Object.assign({fill:{color:TH.MAROON},color:"FFFFFF",bold:true,fontSize:9.5,fontFace:TH.F,align:"left",valign:"middle"},o||{})});
+const cell =(t,o)=>({text:t,options:Object.assign({fill:{color:TH.CARD},color:TH.INK,fontSize:9,fontFace:TH.F,align:"left",valign:"middle"},o||{})});
+const stColor = st => st==="Completed"?TH.GREEN : st==="In Progress"?TH.AMBER : TH.GRAY;
+
+function placeholderBox(pres,s,x,y,w,h,label){
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x,y,w,h,rectRadius:0.07,fill:{color:"F2EAD2"},line:{color:TH.GOLD,width:1,dashType:"dash"}});
+  s.addText("PHOTO\n"+(label||""),{x,y,w,h,align:"center",valign:"middle",fontFace:TH.F,fontSize:10,color:TH.MUTED});
+}
+
+function buildPptx(){
+  const pres = new PptxGenJS();
+  pres.defineLayout({name:"W",width:10,height:5.625});
+  pres.layout="W";
+
+  slides.forEach(d=>{
+    const s=pres.addSlide();
+    if(d.type!=="thanks") s.background={color:TH.CREAM};
+
+    if(d.type==="hero"){
+      if(d.img) s.addImage({data:d.img,x:0,y:0,w:10,h:5.625,sizing:{type:"cover",w:10,h:5.625}});
+      else { s.background={color:TH.CREAM}; placeholderBox(pres,s,0,0,10,4.6,"full-page 3D view"); }
+      s.addShape(pres.shapes.RECTANGLE,{x:0,y:4.72,w:10,h:0.905,fill:{color:TH.MAROON,transparency:8}});
+      s.addShape(pres.shapes.RECTANGLE,{x:0,y:4.68,w:10,h:0.04,fill:{color:TH.GOLD}});
+      s.addText(d.num||"",{x:0.45,y:4.72,w:0.95,h:0.905,fontFace:TH.F,fontSize:34,bold:true,color:TH.GOLD,margin:0,valign:"middle"});
+      s.addText([{text:(d.name||"").toUpperCase()+"   ",options:{fontSize:19,bold:true,color:"FFFFFF"}},
+                 {text:d.sub||"",options:{fontSize:10.5,bold:true,color:TH.GOLD}}],
+                {x:1.5,y:4.72,w:8.4,h:0.905,fontFace:TH.F,valign:"middle",margin:0});
+    }
+
+    if(d.type==="divider"){
+      logoChip(pres,s,false);
+      s.addText(d.num||"",{x:0.45,y:0.85,w:3.0,h:1.5,fontFace:TH.F,fontSize:88,bold:true,color:TH.GOLD,margin:0});
+      s.addShape(pres.shapes.RECTANGLE,{x:0.5,y:2.45,w:1.4,h:0.05,fill:{color:TH.MAROON}});
+      s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x:2.7,y:0.95,w:6.85,h:1.7,rectRadius:0.1,fill:{color:TH.MAROON},shadow:TH.shadow()});
+      s.addText([{text:(d.name||"").toUpperCase(),options:{fontSize:24,bold:true,color:"FFFFFF",breakLine:true}},
+                 {text:d.sub||"",options:{fontSize:11.5,bold:true,color:TH.GOLD}}],
+                {x:3.0,y:1.1,w:6.3,h:1.4,fontFace:TH.F,valign:"middle",lineSpacing:24});
+      (d.stats||[]).slice(0,3).forEach((st,i)=>{
+        const x=0.45+i*3.1;
+        s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x,y:3.25,w:2.95,h:1.5,rectRadius:0.09,fill:{color:TH.CARD},line:{color:TH.GOLD,width:1},shadow:TH.shadow()});
+        s.addText([{text:st.v||"",options:{fontSize:15,bold:true,color:(st.v||"").includes("xx")?TH.GRAY:TH.MAROON,breakLine:true}},
+                   {text:st.l||"",options:{fontSize:9.5,color:TH.MUTED}}],
+                  {x:x+0.15,y:3.35,w:2.65,h:1.3,fontFace:TH.F,align:"center",valign:"middle",lineSpacing:16});
+      });
+    }
+
+    if(d.type==="overview"){
+      header(pres,s,d.title,d.sub);
+      (d.stats||[]).slice(0,4).forEach((st,i)=>{
+        const x=0.45+i*2.33;
+        s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x,y:1.15,w:2.18,h:1.0,rectRadius:0.08,fill:{color:TH.CARD},line:{color:TH.GOLD,width:0.75},shadow:TH.shadow()});
+        s.addText([{text:st.v||"",options:{fontSize:15,bold:true,color:(st.v||"").includes("xx")?TH.GRAY:TH.MAROON,breakLine:true}},
+                   {text:st.l||"",options:{fontSize:8.5,color:TH.MUTED}}],
+                  {x:x+0.1,y:1.23,w:1.98,h:0.84,fontFace:TH.F,align:"center",valign:"middle",lineSpacing:15});
+      });
+      s.addText(d.para||"",{x:0.45,y:2.45,w:9.1,h:1.0,fontFace:TH.F,fontSize:12,color:TH.INK,margin:0});
+      s.addShape(pres.shapes.ROUNDED_RECTANGLE,{x:0.45,y:3.7,w:9.1,h:1.35,rectRadius:0.09,fill:{color:TH.MAROON},shadow:TH.shadow()});
+      s.addText([{text:(d.band1||"").toUpperCase(),options:{fontSize:13,bold:true,color:TH.GOLD,breakLine:true}},
+                 {text:d.band2||"",options:{fontSize:11,color:"FFFFFF"}}],
+                {x:0.8,y:3.85,w:8.4,h:1.05,fontFace:TH.F,valign:"middle",lineSpacing:17});
+    }
+
+    if(d.type==="table"){
+      header(pres,s,d.title,d.sub);
+      if(d.overall) s.addText([{text:"Overall Progress:  ",options:{bold:true,color:TH.MAROON}},
+                               {text:d.overall,options:{bold:true,color:TH.GOLD}}],
+                              {x:0.45,y:1.0,w:9.1,h:0.3,fontFace:TH.F,fontSize:12,margin:0});
+      const data=[[hcell("Work Item"),hcell("Status"),hcell("Remarks")]];
+      (d.rows||[]).forEach(r=>data.push([cell(r.item||""),cell(r.status||"",{bold:true,color:stColor(r.status)}),cell(r.remarks||"")]));
+      s.addTable(data,{x:0.45,y:1.35,w:9.1,colW:[4.3,1.4,3.4],border:TH.TB,margin:0.05,autoPage:false});
+      if(d.stage) s.addText([{text:"Current Stage:  ",options:{bold:true,color:TH.MAROON}},{text:d.stage,options:{color:TH.INK}}],
+                            {x:0.45,y:4.95,w:9.1,h:0.3,fontFace:TH.F,fontSize:10.5,margin:0});
+      if(d.milestone) s.addText([{text:"Next Milestone:  ",options:{bold:true,color:TH.MAROON}},{text:d.milestone,options:{bold:true,color:TH.GOLD}}],
+                                {x:0.45,y:5.25,w:9.1,h:0.3,fontFace:TH.F,fontSize:10.5,margin:0});
+    }
+
+    if(d.type==="fin"){
+      header(pres,s,d.title,d.sub);
+      const data=[[hcell("SL.NO",{align:"center"}),hcell("Particulars"),hcell("Amount in Lakhs (INR)",{align:"right"}),hcell("Works Related To")]];
+      let sum=0, hasNonNumeric=false;
+      (d.rows||[]).forEach(r=>{
+        const n=parseFloat(String(r.amt||"").replace(/,/g,""));
+        if(isFinite(n)) sum+=n; else if((r.amt||"").trim()!=="") hasNonNumeric=true;
+        data.push([cell(r.sl||"",{align:"center"}),cell(r.part||""),
+                   cell(r.amt||"",{align:"right",color:isFinite(n)?TH.INK:TH.GRAY}),cell(r.works||"")]);
+      });
+      const totalTxt = hasNonNumeric ? (sum? sum.toLocaleString("en-IN")+" + xx" : "xx") : sum.toLocaleString("en-IN");
+      data.push([cell(""),cell("TOTAL",{bold:true,color:TH.MAROON}),cell(totalTxt,{align:"right",bold:true,color:TH.MAROON}),cell("")]);
+      s.addTable(data,{x:0.45,y:1.3,w:9.1,colW:[0.7,2.3,1.8,4.3],border:TH.TB,margin:0.05,rowH:0.42,autoPage:false});
+      if(d.note) s.addText([{text:"NOTE:  ",options:{bold:true,color:TH.MAROON}},{text:d.note,options:{color:TH.INK}}],
+                           {x:0.45,y:5.15,w:9.1,h:0.3,fontFace:TH.F,fontSize:10,margin:0});
+    }
+
+    if(d.type==="photos"){
+      header(pres,s,d.title,d.sub);
+      let y=1.1;
+      if(d.caption){ s.addText(d.caption,{x:0.45,y:1.02,w:9.1,h:0.35,fontFace:TH.F,fontSize:11,italic:true,color:TH.MUTED,margin:0}); y=1.45; }
+      const h=5.2-y;
+      [[d.img1,0.45,"Photo 1"],[d.img2,5.1,"Photo 2"]].forEach(([img,x,lab])=>{
+        if(img){
+          s.addImage({data:img,x,y,w:4.45,h,sizing:{type:"cover",w:4.45,h}});
+          s.addShape(pres.shapes.RECTANGLE,{x,y,w:4.45,h,fill:{type:"none"},line:{color:TH.GOLD,width:2.25}});
+        } else placeholderBox(pres,s,x,y,4.45,h,lab);
+      });
+    }
+
+    if(d.type==="thanks"){
+      s.background={color:TH.MAROON};
+      s.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.06,fill:{color:TH.GOLD}});
+      s.addShape(pres.shapes.RECTANGLE,{x:0,y:5.565,w:10,h:0.06,fill:{color:TH.GOLD}});
+      s.addShape(pres.shapes.OVAL,{x:4.67,y:1.15,w:0.66,h:0.66,fill:{color:"FFFFFF"},line:{color:TH.GOLD,width:2}});
+      s.addText("THANK YOU",{x:0.5,y:2.15,w:9.0,h:0.9,fontFace:TH.F,fontSize:44,bold:true,color:"FFFFFF",align:"center",margin:0});
+      s.addShape(pres.shapes.RECTANGLE,{x:4.3,y:3.15,w:1.4,h:0.035,fill:{color:TH.GOLD}});
+      s.addText(d.line1||"",{x:0.5,y:3.35,w:9.0,h:0.4,fontFace:TH.F,fontSize:15,bold:true,color:TH.GOLD,align:"center",margin:0});
+      s.addText(d.line2||"",{x:0.5,y:3.8,w:9.0,h:0.35,fontFace:TH.F,fontSize:11,color:"FFFFFF",align:"center",margin:0});
+    }
+  });
+  return pres;
+}
+
+const msg=document.getElementById("msg");
+document.getElementById("btnGen").onclick = async ()=>{
+  if(!slides.length){ msg.textContent="Add at least one slide first."; return; }
+  msg.textContent="Building…";
+  try{
+    await buildPptx().writeFile({fileName:"OWOF_Progress_Report.pptx"});
+    msg.textContent="Downloaded ✓";
+    setTimeout(()=>msg.textContent="",4000);
+  }catch(err){ console.error(err); msg.textContent="Could not build the file — check the browser console."; }
+};
+
+/* ====================== SAVE / OPEN ====================== */
+document.getElementById("btnExport").onclick = ()=>{
+  const blob=new Blob([JSON.stringify({v:1,slides:slides})],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="owof-deck.json"; a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById("btnImport").onclick = ()=>document.getElementById("importFile").click();
+document.getElementById("importFile").addEventListener("change", e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      if(!Array.isArray(data.slides)) throw new Error("not a deck file");
+      slides=data.slides; selected=slides.length?0:-1;
+      renderTray(); renderEditor(); msg.textContent="Deck loaded ✓"; setTimeout(()=>msg.textContent="",3000);
+    }catch(err){ msg.textContent="That file is not a saved deck (.json from this page)."; }
+  };
+  r.readAsText(f);
+  e.target.value="";
+});
+
+/* ====================== SAMPLE DECK ====================== */
+document.getElementById("btnSample").onclick = ()=>{
+  slides=[
+    {type:"hero",num:"01",name:"SSS Sitaram Jindal Block",sub:"650 Bed Hospital · June 2026",img:null},
+    {type:"divider",num:"01",name:"SSS Sitaram Jindal Block",sub:"650 Bed Hospital · Project Progress Report · June 2026",
+     stats:[{v:"Phase 2 — 20%",l:"Overall Progress"},{v:"~35 Staff",l:"Occupying Ground Floor, Wing 1"},{v:"July 2026",l:"Ground Floor Inauguration"}]},
+    {type:"table",title:"Progress Update",sub:"SSS Sitaram Jindal Block · June 2026",overall:"Phase 2 — 20% Complete",
+     rows:[{item:"Civil and MS Structure",status:"Completed",remarks:"Phase 1 complete"},
+           {item:"External Elevation — Shilpi Elements",status:"In Progress",remarks:"80% complete"},
+           {item:"5th and 6th Floor Waterproofing",status:"In Progress",remarks:"Ongoing"},
+           {item:"Electrical Sub Station and Express Feeder",status:"Not Started",remarks:"To be planned"}],
+     stage:"Ground floor occupied by ~35 staff in Wing 1.",milestone:"July 2026 — Ground Floor Inauguration"},
+    {type:"photos",title:"Wing 1",sub:"SSS Sitaram Jindal Block · June 2026",
+     caption:"Staff of CSR, Ayushman Bharath and Marketing using the offices — about 35 nos.",img1:null,img2:null},
+    {type:"fin",title:"C: Payments of Pending Vendors",sub:"SSS Sitaram Jindal Block · June 2026",
+     note:"Statutory and land expenses not included.",
+     rows:[{sl:"C.1",part:"Civil Works",amt:"1500",works:"Civil vendor, MS and GFRC majorly"},
+           {sl:"C.2",part:"Services and Interiors",amt:"1012",works:"Interiors and services"},
+           {sl:"C.3",part:"Museum",amt:"35",works:"Architects and interior vendors"}]},
+    {type:"overview",title:"Project Overview",sub:"Sai Ashraya — Q Block · Residential Block · June 2026",
+     stats:[{v:"125 Units",l:"111 Studio · 14 × 2-BHK"},{v:"55,000 sq.ft.",l:"Built-up Area"},{v:"Rs. xx Cr",l:"Approved Budget"},{v:"12 Months",l:"Project Duration"}],
+     para:"Sai Ashraya (Q Block) is a residential block comprising 111 studio units and 14 two-BHK units, with a total built-up area of 55,000 sq. ft. and a planned execution duration of 12 months.",
+     band1:"Funds position: received Rs. yy Cr · payments made: Nil",band2:"Current stage and work progress to be updated."},
+    {type:"thanks",line1:"One World One Family Mission",line2:"All Projects — Progress Report · June 2026"},
+  ];
+  selected=0; renderTray(); renderEditor();
+};
+
+renderTray(); renderEditor();
+</script>
+</body>
+</html>
