@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OWOF Deck Builder — Progress Report PPT Generator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.min.js"></script>
+<script>
+/* fallback: if cdnjs is blocked, try jsDelivr */
+if (typeof PptxGenJS === "undefined") {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.min.js"><\/script>');
+}
+</script>
 <style>
   :root{
     --cream:#FBF5E2; --card:#FFFDF4; --maroon:#8B1414; --dmaroon:#6E0E0E;
@@ -484,14 +490,26 @@ function buildPptx(){
 }
 
 const msg=document.getElementById("msg");
+window.addEventListener("load", ()=>{
+  if(typeof PptxGenJS === "undefined"){
+    msg.textContent = "PowerPoint library failed to load — check your internet connection or firewall, then refresh.";
+  }
+});
 document.getElementById("btnGen").onclick = async ()=>{
+  if(typeof PptxGenJS === "undefined"){
+    msg.textContent = "PowerPoint library not loaded. Refresh the page; if it persists, your network is blocking cdnjs.cloudflare.com and cdn.jsdelivr.net.";
+    return;
+  }
   if(!slides.length){ msg.textContent="Add at least one slide first."; return; }
   msg.textContent="Building…";
   try{
     await buildPptx().writeFile({fileName:"OWOF_Progress_Report.pptx"});
-    msg.textContent="Downloaded ✓";
-    setTimeout(()=>msg.textContent="",4000);
-  }catch(err){ console.error(err); msg.textContent="Could not build the file — check the browser console."; }
+    msg.textContent="Downloaded ✓ (check your Downloads folder / the download icon in the address bar)";
+    setTimeout(()=>msg.textContent="",6000);
+  }catch(err){
+    console.error(err);
+    msg.textContent = "Build error: " + (err && err.message ? err.message : err);
+  }
 };
 
 /* ====================== SAVE / OPEN ====================== */
