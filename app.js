@@ -356,13 +356,29 @@ OWOF.init = function(){
   el("btnSample").onclick = function(){
     OWOF.slides = [
       {type:"hero", num:"01", name:"SSS Sitaram Jindal Block", sub:"650 Bed Hospital · June 2026", img:null},
+      {type:"divider", num:"01", name:"SSS Sitaram Jindal Block", sub:"650 Bed Hospital · Project Progress Report · June 2026",
+       stats:[{v:"Phase 2 — 20%",l:"Overall Progress"},{v:"~35 Staff",l:"Occupying Ground Floor, Wing 1"},{v:"July 2026",l:"Ground Floor Inauguration"}]},
+      {type:"overview", title:"Project Overview", sub:"Sai Ashraya — Q Block · Residential Block · June 2026",
+       stats:[{v:"125 Units",l:"111 Studio · 14 × 2-BHK"},{v:"55,000 sq.ft.",l:"Built-up Area"},{v:"Rs. xx Cr",l:"Approved Budget"},{v:"12 Months",l:"Project Duration"}],
+       para:"Sai Ashraya (Q Block) is a residential block comprising 111 studio units and 14 two-BHK units, with a total built-up area of 55,000 sq. ft. and a planned execution duration of 12 months.",
+       band1:"Funds position: received Rs. yy Cr · payments made: Nil",
+       band2:"Current stage and work progress to be updated."},
       {type:"table", title:"Progress Update", sub:"SSS Sitaram Jindal Block · June 2026", overall:"Phase 2 — 20% Complete",
        rows:[
         {item:"Civil and MS Structure", status:"Completed", remarks:"Phase 1 complete"},
         {item:"External Elevation — Shilpi Elements", status:"In Progress", remarks:"80% complete"},
         {item:"5th and 6th Floor Waterproofing", status:"In Progress", remarks:"Ongoing"},
         {item:"Electrical Sub Station and Express Feeder", status:"Not Started", remarks:"To be planned"}],
-       stage:"Ground floor occupied by ~35 staff in Wing 1.", milestone:"July 2026 — Ground Floor Inauguration"}
+       stage:"Ground floor occupied by ~35 staff in Wing 1.", milestone:"July 2026 — Ground Floor Inauguration"},
+      {type:"photos", title:"Wing 1", sub:"SSS Sitaram Jindal Block · June 2026",
+       caption:"Staff of CSR, Ayushman Bharath and Marketing using the offices — about 35 nos.", img1:null, img2:null},
+      {type:"fin", title:"C: Payments of Pending Vendors", sub:"SSS Sitaram Jindal Block · June 2026",
+       note:"Statutory and land expenses not included.",
+       rows:[
+        {sl:"C.1", part:"Civil Works", amt:"1500", works:"Civil vendor, MS and GFRC majorly"},
+        {sl:"C.2", part:"Services and Interiors", amt:"1012", works:"Interiors and services"},
+        {sl:"C.3", part:"Museum", amt:"35", works:"Architects and interior vendors"}]},
+      {type:"thanks", line1:"One World One Family Mission", line2:"All Projects — Progress Report · June 2026"}
     ];
     OWOF.selected = 0;
     H.refreshAll();
