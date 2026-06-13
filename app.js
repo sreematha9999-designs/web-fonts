@@ -287,7 +287,7 @@ function buildPptx(){
   OWOF.slides.forEach(function(sl){
     const def = OWOF.templates[sl.type];
     const s = pres.addSlide();
-    if(def){ def.pptx(pres, s, sl, H); }
+    if(def && def.pptx){ def.pptx(pres, s, sl, H); }   /* "pptx" is today's renderer; an "a4" renderer can be added per template later without touching core */
     else {
       s.background = {color:H.TH.CREAM};
       s.addText('Slide type "'+sl.type+'" — template chapter not installed yet.',
