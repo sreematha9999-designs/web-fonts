@@ -4,10 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OWOF Deck Builder</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.min.js"
+        onerror="loadPptxFallback()"></script>
 <script>
-if (typeof PptxGenJS === "undefined") {
-  document.write('<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.min.js"><\/script>');
+/* non-blocking fallback: no document.write, so no parser-blocking warning,
+   and the UI still loads even if the chart library is slow or blocked. */
+function loadPptxFallback(){
+  if (typeof PptxGenJS !== "undefined") return;
+  var s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.min.js";
+  document.head.appendChild(s);
 }
 </script>
 <style>

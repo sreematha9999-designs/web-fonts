@@ -421,6 +421,10 @@ OWOF.init = function(){
   function say(t, sticky){ msg.textContent = t; if(!sticky) setTimeout(function(){ if(msg.textContent===t) msg.textContent=""; }, 5000); }
 
   renderPalette();   /* Zone 1: visual slide-type gallery */
+  if(OWOF.order.length === 0){
+    const pal = el("palette");
+    if(pal) pal.innerHTML = '<p class="empty">No slide types loaded — a template-*.js file is missing or misnamed in the repo. Check the browser console (F12) for a 404.</p>';
+  }
 
   el("btnGen").onclick = function(){
     if(typeof PptxGenJS === "undefined"){ say("PowerPoint library not loaded — check your internet connection and refresh.", true); return; }
