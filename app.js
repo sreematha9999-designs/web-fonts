@@ -29,8 +29,8 @@ OWOF.H = H;
 Object.defineProperty(H, "TH", { get: () => OWOF.theme });
 
 /* ---------- refreshers ---------- */
-H.refreshLight = function(){ renderTray(); renderPreview(); };          // text edits
-H.refreshAll   = function(){ renderTray(); renderEditor(); renderPreview(); }; // structural edits (add/remove row)
+H.refreshLight = function(){ renderLane(); renderPreview(); };               // text edits
+H.refreshAll   = function(){ renderLane(); renderEditor(); renderPreview(); }; // structural edits
 
 /* ---------- editor form helpers ---------- */
 H.fieldset = function(title){
@@ -215,53 +215,139 @@ PV.headerBar = function(host, title, sub){
 };
 
 /* ============================================================
-   UI — tray, editor, preview
+   UI — 4-zone workspace: palette | deck lane | editor | design variants
+   The palette & lane thumbnails reuse each template's own preview() rendered
+   tiny, so adding template chapters needs no UI changes.
    ============================================================ */
 function el(id){ return document.getElementById(id); }
 function typeLabel(t){ const d = OWOF.templates[t]; return d ? d.label : t; }
 function slideLabel(s){ return s.name || s.title || typeLabel(s.type); }
 
-function renderTray(){
-  const tray = el("tray"); if(!tray) return;
-  tray.innerHTML = "";
-  if(!OWOF.slides.length){ tray.innerHTML = '<p class="empty">No slides yet.</p>'; return; }
-  OWOF.slides.forEach(function(s, i){
-    const d = document.createElement("div");
-    d.className = "slidecard" + (i===OWOF.selected ? " sel" : "");
-    d.innerHTML = '<div class="num">'+(i+1)+'</div>'+
-      '<div class="label"><div class="ty"></div><div class="nm"></div></div>'+
-      '<div class="mini"><button title="Move up">&#9650;</button><button title="Move down">&#9660;</button>'+
-      '<button title="Duplicate">&#10697;</button><button title="Delete">&#10005;</button></div>';
-    d.querySelector(".ty").textContent = typeLabel(s.type);
-    d.querySelector(".nm").textContent = slideLabel(s);
-    d.addEventListener("click", function(){ OWOF.selected = i; H.refreshAll(); });
-    const b = d.querySelectorAll(".mini button");
-    b[0].onclick = function(e){ e.stopPropagation(); if(i>0){ const a=OWOF.slides; const t=a[i-1]; a[i-1]=a[i]; a[i]=t; if(OWOF.selected===i)OWOF.selected=i-1; H.refreshAll(); } };
-    b[1].onclick = function(e){ e.stopPropagation(); const a=OWOF.slides; if(i<a.length-1){ const t=a[i+1]; a[i+1]=a[i]; a[i]=t; if(OWOF.selected===i)OWOF.selected=i+1; H.refreshAll(); } };
-    b[2].onclick = function(e){ e.stopPropagation(); OWOF.slides.splice(i+1,0,JSON.parse(JSON.stringify(s))); H.refreshAll(); };
-    b[3].onclick = function(e){ e.stopPropagation(); OWOF.slides.splice(i,1); if(OWOF.selected>=OWOF.slides.length)OWOF.selected=OWOF.slides.length-1; H.refreshAll(); };
-    tray.appendChild(d);
+/* render a slide object into a fixed-size mini preview surface */
+function miniPreview(host, slide){
+  host.innerHTML = "";
+  const def = OWOF.templates[slide.type];
+  if(!def || !def.preview){
+    const p = document.createElement("div"); p.className = "pvempty"; p.textContent = typeLabel(slide.type);
+    host.appendChild(p); return;
+  }
+  host.style.background = "#"+H.TH.CREAM;
+  try{ def.preview(slide, host, H); }
+  catch(e){ host.innerHTML = '<div class="pvempty">'+typeLabel(slide.type)+'</div>'; }
+}
+
+/* ---------- ZONE 1: visual palette of slide types ---------- */
+function renderPalette(){
+  const pal = el("palette"); if(!pal) return;
+  pal.innerHTML = "";
+  OWOF.order.forEach(function(t){
+    const def = OWOF.templates[t];
+    const card = document.createElement("div");
+    card.className = "palcard";
+    card.draggable = true;
+    card.title = "Drag into the deck, or click to add at the end";
+    const thumb = document.createElement("div"); thumb.className = "thumb";
+    miniPreview(thumb, def.defaults());
+    const cap = document.createElement("div"); cap.className = "palcap"; cap.textContent = def.label;
+    card.appendChild(thumb); card.appendChild(cap);
+    card.addEventListener("click", function(){ addSlide(t); });
+    card.addEventListener("dragstart", function(e){ e.dataTransfer.setData("text/owof-new", t); e.dataTransfer.effectAllowed="copy"; });
+    pal.appendChild(card);
   });
 }
 
+function addSlide(type, atIndex){
+  if(!OWOF.templates[type]) return;
+  const s = OWOF.templates[type].defaults();
+  if(atIndex==null || atIndex<0 || atIndex>OWOF.slides.length){ OWOF.slides.push(s); OWOF.selected = OWOF.slides.length-1; }
+  else { OWOF.slides.splice(atIndex,0,s); OWOF.selected = atIndex; }
+  H.refreshAll();
+}
+
+/* ---------- ZONE 2: the deck lane (filmstrip) with drag-drop ---------- */
+let dragFrom = -1;
+function renderLane(){
+  const lane = el("lane"); if(!lane) return;
+  lane.innerHTML = "";
+  if(!OWOF.slides.length){
+    lane.innerHTML = '<p class="empty">Drag a slide type here, or click one in the palette.</p>';
+    wireLaneDropEnd(lane);
+    return;
+  }
+  OWOF.slides.forEach(function(s, i){
+    const row = document.createElement("div");
+    row.className = "lanecard" + (i===OWOF.selected ? " sel" : "");
+    row.draggable = true;
+
+    const num = document.createElement("div"); num.className = "lnum"; num.textContent = (i+1);
+    const thumb = document.createElement("div"); thumb.className = "lthumb";
+    miniPreview(thumb, s);
+    const meta = document.createElement("div"); meta.className = "lmeta";
+    const ty = document.createElement("div"); ty.className = "lty"; ty.textContent = typeLabel(s.type);
+    const nm = document.createElement("div"); nm.className = "lnm"; nm.textContent = slideLabel(s);
+    meta.appendChild(ty); meta.appendChild(nm);
+    const tools = document.createElement("div"); tools.className = "ltools";
+    tools.innerHTML = '<button title="Duplicate">&#10697;</button><button title="Delete">&#10005;</button>';
+
+    row.appendChild(num); row.appendChild(thumb); row.appendChild(meta); row.appendChild(tools);
+
+    row.addEventListener("click", function(){ OWOF.selected = i; H.refreshAll(); });
+    const tb = tools.querySelectorAll("button");
+    tb[0].onclick = function(e){ e.stopPropagation(); OWOF.slides.splice(i+1,0,JSON.parse(JSON.stringify(s))); OWOF.selected=i+1; H.refreshAll(); };
+    tb[1].onclick = function(e){ e.stopPropagation(); OWOF.slides.splice(i,1); if(OWOF.selected>=OWOF.slides.length)OWOF.selected=OWOF.slides.length-1; H.refreshAll(); };
+
+    /* reorder existing, or accept a new type from the palette */
+    row.addEventListener("dragstart", function(e){ dragFrom = i; e.dataTransfer.setData("text/owof-move", String(i)); e.dataTransfer.effectAllowed="move"; row.classList.add("dragging"); });
+    row.addEventListener("dragend", function(){ row.classList.remove("dragging"); dragFrom=-1; clearDropMarks(); });
+    row.addEventListener("dragover", function(e){ e.preventDefault(); row.classList.add("dropabove"); });
+    row.addEventListener("dragleave", function(){ row.classList.remove("dropabove"); });
+    row.addEventListener("drop", function(e){
+      e.preventDefault(); row.classList.remove("dropabove");
+      const newType = e.dataTransfer.getData("text/owof-new");
+      if(newType){ addSlide(newType, i); return; }
+      const from = parseInt(e.dataTransfer.getData("text/owof-move"),10);
+      if(isNaN(from) || from===i) return;
+      const a = OWOF.slides; const moved = a.splice(from,1)[0]; const to = from<i ? i-1 : i; a.splice(to,0,moved);
+      OWOF.selected = to; H.refreshAll();
+    });
+
+    lane.appendChild(row);
+  });
+  wireLaneDropEnd(lane);
+}
+function clearDropMarks(){ const m = document.querySelectorAll(".dropabove"); for(var i=0;i<m.length;i++) m[i].classList.remove("dropabove"); }
+function wireLaneDropEnd(lane){
+  lane.addEventListener("dragover", function(e){ e.preventDefault(); });
+  lane.addEventListener("drop", function(e){
+    if(e.target!==lane) return;          /* only when dropped on empty space at the end */
+    e.preventDefault();
+    const newType = e.dataTransfer.getData("text/owof-new");
+    if(newType){ addSlide(newType); return; }
+    const from = parseInt(e.dataTransfer.getData("text/owof-move"),10);
+    if(!isNaN(from)){ const a=OWOF.slides; const moved=a.splice(from,1)[0]; a.push(moved); OWOF.selected=a.length-1; H.refreshAll(); }
+  });
+}
+
+/* ---------- ZONE 3: content editor ---------- */
 function renderEditor(){
   const ed = el("editor"); if(!ed) return;
   ed.innerHTML = "";
   const s = OWOF.slides[OWOF.selected];
-  if(!s){ ed.innerHTML = '<p class="empty">Add a slide on the left, or load the sample deck.</p>'; return; }
+  if(!s){ ed.innerHTML = '<p class="empty">Add a slide (palette on the left), then click it here to edit.</p>'; return; }
   const head = document.createElement("div");
-  head.innerHTML = '<h2 class="serif"></h2><p class="sub">Changes save automatically and show in the preview. Use Download PPTX when ready.</p>';
-  head.querySelector("h2").textContent = "Slide "+(OWOF.selected+1)+" — "+typeLabel(s.type);
+  head.innerHTML = '<h2 class="serif"></h2><p class="sub">Changes save automatically and show in the preview.</p>';
+  head.querySelector("h2").textContent = "Edit — "+typeLabel(s.type);
   ed.appendChild(head);
   const def = OWOF.templates[s.type];
   if(def) def.editor(s, ed, H);
   else {
     const p = document.createElement("p"); p.className = "empty";
-    p.textContent = 'This deck uses a "'+s.type+'" slide, but that template chapter is not installed yet (coming in Phase 2). Its data is kept safe and it will export as a notice slide.';
+    p.textContent = 'This deck uses a "'+s.type+'" slide whose template is not installed. Its data is kept safe and exports as a notice slide.';
     ed.appendChild(p);
   }
 }
 
+/* ---------- ZONE 4: preview + design variants ---------- */
 function renderPreview(){
   const host = el("pv"); if(!host) return;
   host.innerHTML = "";
@@ -271,10 +357,39 @@ function renderPreview(){
     const p = document.createElement("div"); p.className = "pvempty";
     p.textContent = s ? "No preview — template not installed." : "Preview appears here.";
     host.appendChild(p);
-    return;
+  } else {
+    host.style.background = "#"+H.TH.CREAM;
+    try{ def.preview(s, host, H); }catch(e){ host.innerHTML='<div class="pvempty">preview error</div>'; }
   }
-  host.style.background = "#"+H.TH.CREAM;
-  def.preview(s, host, H);
+  renderVariants();
+}
+
+/* design-variant zone. Templates may expose def.variants=[{id,label}] and honor slide.variant.
+   With one variant each (now), this shows the single current design; expands automatically later. */
+function renderVariants(){
+  const vz = el("variants"); if(!vz) return;
+  vz.innerHTML = "";
+  const s = OWOF.slides[OWOF.selected];
+  const def = s && OWOF.templates[s.type];
+  if(!s || !def){ return; }
+  const list = (def.variants && def.variants.length) ? def.variants : [{id:"default", label:"Standard"}];
+  list.forEach(function(v){
+    const card = document.createElement("div");
+    const active = (s.variant||"default")===v.id;
+    card.className = "varcard" + (active ? " sel" : "");
+    const thumb = document.createElement("div"); thumb.className = "vthumb";
+    const probe = JSON.parse(JSON.stringify(s)); probe.variant = v.id;
+    miniPreview(thumb, probe);
+    const cap = document.createElement("div"); cap.className = "vcap"; cap.textContent = v.label;
+    card.appendChild(thumb); card.appendChild(cap);
+    card.addEventListener("click", function(){ s.variant = v.id; H.refreshAll(); });
+    vz.appendChild(card);
+  });
+  if(list.length<=1){
+    const note = document.createElement("p"); note.className = "hint";
+    note.textContent = "More design options for this slide type are coming. (One design each for now.)";
+    vz.appendChild(note);
+  }
 }
 
 /* ============================================================
@@ -305,19 +420,7 @@ OWOF.init = function(){
   const msg = el("msg");
   function say(t, sticky){ msg.textContent = t; if(!sticky) setTimeout(function(){ if(msg.textContent===t) msg.textContent=""; }, 5000); }
 
-  /* populate "add slide" menu from the registry */
-  const sel = el("newType");
-  OWOF.order.forEach(function(t){
-    const o = document.createElement("option"); o.value = t; o.textContent = OWOF.templates[t].label;
-    sel.appendChild(o);
-  });
-
-  el("btnAdd").onclick = function(){
-    const t = sel.value; if(!OWOF.templates[t]) return;
-    OWOF.slides.push(OWOF.templates[t].defaults());
-    OWOF.selected = OWOF.slides.length - 1;
-    H.refreshAll();
-  };
+  renderPalette();   /* Zone 1: visual slide-type gallery */
 
   el("btnGen").onclick = function(){
     if(typeof PptxGenJS === "undefined"){ say("PowerPoint library not loaded — check your internet connection and refresh.", true); return; }
