@@ -115,6 +115,51 @@ H.downscale = function(fileOrBlob, maxW, quality){
    PPTX drawing helpers (shared visual language of the theme)
    ============================================================ */
 H.shadow = function(){ return {type:"outer",color:"000000",blur:5,offset:2,angle:45,opacity:0.16}; };
+
+/* ---------- SHARED SLIDE INTELLIGENCE ---------- */
+/* fitText: choose a font size so text of given length fits a box of (w x h) inches.
+   Approximates chars-per-line from width, lines from height. Returns pt within [min,max]. */
+H.fitText = function(text, wIn, hIn, maxPt, minPt){
+  maxPt = maxPt||24; minPt = minPt||9;
+  var n = (text||"").length; if(n===0) return maxPt;
+  for(var pt=maxPt; pt>minPt; pt--){
+    var charW = pt*0.52/72;            // approx char width in inches
+    var perLine = Math.max(1, Math.floor(wIn/charW));
+    var lines = Math.ceil(n/perLine);
+    var lineH = pt*1.25/72;            // line height in inches
+    if(lines*lineH <= hIn) return pt;
+  }
+  return minPt;
+};
+/* autoGrid: n items -> {cols, rows} aiming for a pleasing near-square / wide layout */
+H.autoGrid = function(n, opts){
+  opts = opts||{}; var maxCols = opts.maxCols||5;
+  if(n<=1) return {cols:1,rows:1};
+  if(n<=maxCols) return {cols:n, rows:1};
+  var cols = Math.ceil(Math.sqrt(n)); if(cols>maxCols) cols=maxCols;
+  return {cols:cols, rows:Math.ceil(n/cols)};
+};
+/* overflowRisk: rough check used by editors to warn the user (returns true if likely to overflow) */
+H.overflowRisk = function(text, wIn, hIn, minPt){
+  return H.fitText(text, wIn, hIn, minPt||9, 6) <= (minPt||9);
+};
+/* warnBox: append a gentle overflow warning into an editor fieldset */
+H.warnBox = function(host, msg){
+  var w = document.createElement("p");
+  w.style.cssText = "color:#A8400E;background:#FBE8D8;border:1px solid #E8B894;border-radius:6px;padding:6px 9px;font-size:11.5px;margin-top:8px;";
+  w.textContent = "\u26A0 " + msg;
+  host.appendChild(w);
+  return w;
+};
+
+/* ---------- DIAGRAM PRIMITIVES (for illustrative chapters, used later) ---------- */
+H.connector = function(pres, s, x1,y1,x2,y2, color, wpt){
+  s.addShape(pres.shapes.LINE, {x:x1,y:y1,w:x2-x1,h:y2-y1, line:{color:color||H.TH.GOLD, width:wpt||2}});
+};
+H.arrowRight = function(pres, s, x, y, w, h, color){
+  s.addShape(pres.shapes.CHEVRON, {x:x,y:y,w:w,h:h, fill:{color:color||H.TH.GOLD}});
+};
+
 H.hcell = function(t,o){ return {text:t,options:Object.assign({fill:{color:H.TH.MAROON},color:"FFFFFF",bold:true,fontSize:9.5,fontFace:H.TH.FONT,align:"left",valign:"middle"},o||{})}; };
 H.cell  = function(t,o){ return {text:t,options:Object.assign({fill:{color:H.TH.CARD},color:H.TH.INK,fontSize:9,fontFace:H.TH.FONT,align:"left",valign:"middle"},o||{})}; };
 H.stColor = function(st){ return st==="Completed" ? H.TH.GREEN : st==="In Progress" ? H.TH.AMBER : H.TH.GRAY; };
