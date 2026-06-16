@@ -154,7 +154,15 @@ H.warnBox = function(host, msg){
 
 /* ---------- DIAGRAM PRIMITIVES (for illustrative chapters, used later) ---------- */
 H.connector = function(pres, s, x1,y1,x2,y2, color, wpt){
-  s.addShape(pres.shapes.LINE, {x:x1,y:y1,w:x2-x1,h:y2-y1, line:{color:color||H.TH.GOLD, width:wpt||2}});
+  /* PptxGenJS LINE requires x,y to be the top-left corner and w,h to be positive.
+     For diagonal lines: use the bounding box, then LINE draws corner-to-corner. */
+  var lx=Math.min(x1,x2), ly=Math.min(y1,y2);
+  var lw=Math.abs(x2-x1)||0.01, lh=Math.abs(y2-y1)||0.01;
+  /* flipH/flipV tell PptxGenJS which diagonal direction */
+  var flipH = x2<x1, flipV = y2<y1;
+  s.addShape(pres.shapes.LINE, {x:lx,y:ly,w:lw,h:lh,
+    flipH:flipH, flipV:flipV,
+    line:{color:color||H.TH.GOLD, width:wpt||2}});
 };
 H.arrowRight = function(pres, s, x, y, w, h, color){
   s.addShape(pres.shapes.CHEVRON, {x:x,y:y,w:w,h:h, fill:{color:color||H.TH.GOLD}});
@@ -459,6 +467,38 @@ function buildPptx(){
 OWOF._buildPptx = buildPptx;   /* exposed for testing */
 
 /* ============================================================
+   A4 DOCUMENT ENGINE — registry + build orchestrator
+   ============================================================ */
+OWOF.a4Templates = {};
+OWOF.a4Order = [];
+OWOF.registerA4Template = function(def){
+  if(!def || !def.type) return;
+  OWOF.a4Templates[def.type] = def;
+  if(OWOF.a4Order.indexOf(def.type) < 0) OWOF.a4Order.push(def.type);
+};
+
+/* Build an A4 PPTX document from OWOF.slides in A4 mode */
+OWOF._buildA4 = function(){
+  var pres = new PptxGenJS();
+  pres.defineLayout({name:"A4P", width:8.268, height:11.693});
+  pres.layout = "A4P";
+  OWOF.slides.forEach(function(sl){
+    var def = OWOF.a4Templates[sl.type];
+    var s = pres.addSlide();
+    if(def && def.a4){ def.a4(pres, s, sl, H); }
+    else if(def && def.pptx){ def.pptx(pres, s, sl, H); }
+    else {
+      s.background = {color:H.TH.CREAM};
+      s.addText('A4 template "'+sl.type+'" not installed.',
+        {x:0.55,y:5.0,w:7.168,h:0.8,align:"center",valign:"middle",fontFace:H.TH.FONT,fontSize:13,color:H.TH.MAROON});
+    }
+  });
+  return pres;
+};
+OWOF._buildPptx_A4 = OWOF._buildA4; /* alias */
+
+
+/* ============================================================
    INIT — wire the shell (called once all chapters have loaded)
    ============================================================ */
 OWOF.init = function(){
@@ -534,6 +574,57 @@ OWOF.init = function(){
     ];
     OWOF.selected = 0;
     H.refreshAll();
+  };
+
+  /* A4 mode toggle */
+  var a4Mode = false;
+  var chkA4 = el("chkA4Mode");
+  if(chkA4) chkA4.addEventListener("change", function(){
+    a4Mode = chkA4.checked;
+    renderPalette(); H.refreshAll();
+  });
+
+  /* Override renderPalette to support A4 mode */
+  var _basePalette = renderPalette;
+  renderPalette = function(){
+    var pal = el("palette"); if(!pal) return;
+    pal.innerHTML = "";
+    var order = a4Mode ? (OWOF.a4Order||[]) : OWOF.order;
+    var tmpl  = a4Mode ? (OWOF.a4Templates||{}) : OWOF.templates;
+    if(!order || !order.length){
+      pal.innerHTML = '<p class="empty">'+(a4Mode ? "No A4 templates installed yet." : "No templates.")+'</p>'; return;
+    }
+    order.forEach(function(t){
+      var def = tmpl[t]; if(!def) return;
+      var card = document.createElement("div"); card.className = "palcard"; card.draggable = true;
+      var thumb = document.createElement("div"); thumb.className = "thumb";
+      var defs = def.defaults();
+      /* preview */
+      thumb.style.background = "#"+H.TH.CREAM;
+      try{ def.preview(defs, thumb, H); }catch(e){ thumb.innerHTML='<div class="pvempty">'+def.label+'</div>'; }
+      var cap = document.createElement("div"); cap.className = "palcap"; cap.textContent = def.label;
+      card.appendChild(thumb); card.appendChild(cap);
+      card.addEventListener("click", function(){
+        OWOF.slides.push(def.defaults()); OWOF.selected = OWOF.slides.length-1; H.refreshAll();
+      });
+      card.addEventListener("dragstart", function(e){
+        e.dataTransfer.setData("text/owof-new", t); e.dataTransfer.effectAllowed = "copy";
+      });
+      pal.appendChild(card);
+    });
+  };
+
+  /* A4 download */
+  var btnA4 = el("btnGenA4");
+  if(btnA4) btnA4.onclick = function(){
+    if(typeof PptxGenJS === "undefined"){ say("Library not loaded.", true); return; }
+    if(!OWOF.slides.length){ say("Add at least one slide first."); return; }
+    say("Building A4 document…", true);
+    try{
+      OWOF._buildA4().writeFile({fileName:"OWOF_A4_Document.pptx"})
+        .then(function(){ say("A4 downloaded ✓ — open in PowerPoint, set paper to A4 portrait."); })
+        .catch(function(e){ say("A4 error: "+(e&&e.message||e), true); });
+    }catch(e){ say("A4 error: "+(e&&e.message||e), true); }
   };
 
   if(typeof PptxGenJS === "undefined")
