@@ -273,8 +273,8 @@ PV.headerBar = function(host, title, sub){
    tiny, so adding template chapters needs no UI changes.
    ============================================================ */
 function el(id){ return document.getElementById(id); }
-function typeLabel(t){ const d = OWOF.templates[t]; return d ? d.label : t; }
-function slideLabel(s){ return s.name || s.title || typeLabel(s.type); }
+function typeLabel(t){ const d = OWOF.templates[t] || (OWOF.a4Templates && OWOF.a4Templates[t]); return d ? d.label : t; }
+function slideLabel(s){ return s.name || s.title || s.sectionTitle || typeLabel(s.type); }
 
 /* render a slide object into a fixed-size mini preview surface */
 function miniPreview(host, slide){
@@ -393,7 +393,7 @@ function renderEditor(){
   head.innerHTML = '<h2 class="serif"></h2><p class="sub">Changes save automatically and show in the preview.</p>';
   head.querySelector("h2").textContent = "Edit — "+typeLabel(s.type);
   ed.appendChild(head);
-  const def = OWOF.templates[s.type];
+  const def = OWOF.templates[s.type] || (OWOF.a4Templates && OWOF.a4Templates[s.type]);
   if(def) def.editor(s, ed, H);
   else {
     const p = document.createElement("p"); p.className = "empty";
@@ -415,6 +415,9 @@ function renderPreview(){
     host.appendChild(p);
   } else {
     host.style.background = "#"+H.TH.CREAM;
+    /* Switch preview aspect ratio: A4 types use portrait (9/16 * 8.268/11.693 ≈ 0.562 * 0.707 = 0.398 → use aspect-ratio 595/842) */
+    var isA4type = !!(OWOF.a4Templates && OWOF.a4Templates[s.type]);
+    host.style.aspectRatio = isA4type ? "595 / 842" : "16 / 9";
     try{ def.preview(s, host, H); }catch(e){ console.warn("preview err:",e.message); host.innerHTML='<div class="pvempty">preview error: '+e.message+'</div>'; }
   }
   renderVariants();
