@@ -279,14 +279,16 @@ function slideLabel(s){ return s.name || s.title || typeLabel(s.type); }
 /* render a slide object into a fixed-size mini preview surface */
 function miniPreview(host, slide){
   host.innerHTML = "";
-  const def = OWOF.templates[slide.type];
+  /* check both registries — landscape first, then A4 */
+  const def = OWOF.templates[slide.type] || (OWOF.a4Templates && OWOF.a4Templates[slide.type]);
   if(!def || !def.preview){
-    const p = document.createElement("div"); p.className = "pvempty"; p.textContent = typeLabel(slide.type);
+    const p = document.createElement("div"); p.className = "pvempty";
+    p.textContent = slide.type || "?";
     host.appendChild(p); return;
   }
   host.style.background = "#"+H.TH.CREAM;
   try{ def.preview(slide, host, H); }
-  catch(e){ host.innerHTML = '<div class="pvempty">'+typeLabel(slide.type)+'</div>'; }
+  catch(e){ console.warn("preview error for "+slide.type+":", e.message); host.innerHTML = '<div class="pvempty">'+slide.type+'</div>'; }
 }
 
 /* ---------- ZONE 1: visual palette of slide types ---------- */
@@ -405,14 +407,15 @@ function renderPreview(){
   const host = el("pv"); if(!host) return;
   host.innerHTML = "";
   const s = OWOF.slides[OWOF.selected];
-  const def = s && OWOF.templates[s.type];
+  /* check both registries */
+  const def = s && (OWOF.templates[s.type] || (OWOF.a4Templates && OWOF.a4Templates[s.type]));
   if(!s || !def){
     const p = document.createElement("div"); p.className = "pvempty";
     p.textContent = s ? "No preview — template not installed." : "Preview appears here.";
     host.appendChild(p);
   } else {
     host.style.background = "#"+H.TH.CREAM;
-    try{ def.preview(s, host, H); }catch(e){ host.innerHTML='<div class="pvempty">preview error</div>'; }
+    try{ def.preview(s, host, H); }catch(e){ console.warn("preview err:",e.message); host.innerHTML='<div class="pvempty">preview error: '+e.message+'</div>'; }
   }
   renderVariants();
 }
@@ -423,7 +426,7 @@ function renderVariants(){
   const vz = el("variants"); if(!vz) return;
   vz.innerHTML = "";
   const s = OWOF.slides[OWOF.selected];
-  const def = s && OWOF.templates[s.type];
+  const def = s && (OWOF.templates[s.type] || (OWOF.a4Templates && OWOF.a4Templates[s.type]));
   if(!s || !def){ return; }
   const list = (def.variants && def.variants.length) ? def.variants : [{id:"default", label:"Standard"}];
   list.forEach(function(v){
