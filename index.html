@@ -8,7 +8,7 @@
 <script src="pptxgen.bundle.min.js"></script>
 <style>
   :root{
-    --cream:#FBF5E2; --card:#FFFDF4; --maroon:#8B1414; --dmaroon:#6E0E0E;
+    --cream:#FBF5E2; --card:#FFFDF4; --maroon:#8B1414; --dmaroon:#7A0E0E;
     --gold:#C9A227; --golddk:#A8861B; --ink:#3B3B3B; --muted:#7a7468; --line:#E5D9A8;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -43,17 +43,21 @@
 
   .pvempty{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-style:italic; font-size:11px; text-align:center; padding:6px;}
 
+  /* ── Palette cards ── */
   .palcard{margin-bottom:10px; cursor:grab; border:1px solid var(--line); border-radius:7px; background:var(--card); padding:5px;}
   .palcard:hover{border-color:var(--gold); box-shadow:0 2px 8px rgba(139,20,20,.10);}
   .palcard .thumb{position:relative; width:100%; aspect-ratio:16/9; container-type:inline-size; background:#fff; border-radius:4px; overflow:hidden;}
+  .palcard .thumb.a4thumb{aspect-ratio:595/842;}
   .palcap{font-size:10.5px; font-weight:600; color:var(--dmaroon); text-align:center; margin-top:4px; line-height:1.2;}
 
+  /* ── Lane cards ── */
   .lanecard{display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px; margin-bottom:8px; cursor:pointer;}
   .lanecard.sel{border-color:var(--gold); box-shadow:0 2px 10px rgba(139,20,20,.14);}
   .lanecard.dragging{opacity:.5;}
   .lanecard.dropabove{border-top:3px solid var(--gold);}
   .lnum{font-family:Georgia,serif; font-size:13px; font-weight:700; color:var(--gold); width:16px; text-align:center; flex:none;}
   .lthumb{position:relative; width:96px; aspect-ratio:16/9; container-type:inline-size; background:#fff; border:1px solid var(--line); border-radius:4px; overflow:hidden; flex:none;}
+  .lthumb.a4thumb{aspect-ratio:595/842; width:60px;}
   .lmeta{flex:1; min-width:0;}
   .lty{font-size:9px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted);}
   .lnm{font-size:12px; font-weight:600; color:var(--dmaroon); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -61,6 +65,7 @@
   .ltools button{border:none; background:none; color:var(--muted); cursor:pointer; font-size:12px; padding:1px 4px; border-radius:4px;}
   .ltools button:hover{color:var(--maroon); background:rgba(139,20,20,.08);}
 
+  /* ── Editor ── */
   .zone3 h2{color:var(--dmaroon); font-size:17px; margin-bottom:2px;}
   .zone3 .sub{color:var(--muted); margin-bottom:12px; font-size:12px;}
   fieldset{border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin-bottom:12px; background:var(--card);}
@@ -84,13 +89,24 @@
   .orlbl{color:var(--muted);font-size:12px;}
   .hint{font-size:11.5px;color:var(--muted);margin-top:7px;}
 
-  #pv{position:relative; width:100%; aspect-ratio:16/9; container-type:inline-size; background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; box-shadow:0 3px 14px rgba(139,20,20,.10); font-family:Arial,sans-serif; transition:aspect-ratio 0.2s;}
+  /* ── Zone 4: Preview ── */
+  /* #pv aspect-ratio is fully controlled by JS — default 16/9, switches to 595/842 for A4 */
+  #pv{
+    position:relative; width:100%; aspect-ratio:16/9;
+    container-type:inline-size;
+    background:#fff; border:1px solid var(--line); border-radius:8px;
+    overflow:hidden; box-shadow:0 3px 14px rgba(139,20,20,.10);
+    font-family:Arial,sans-serif; transition:aspect-ratio 0.25s ease;
+  }
+  #pv.a4pv{ aspect-ratio:595/842; }
+
   .pvnote{font-size:11px;color:var(--muted);margin:8px 0 14px;}
   .vtitle{font-family:Georgia,serif;font-size:12px;color:var(--dmaroon);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 8px;}
   #variants{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
   .varcard{cursor:pointer;border:1px solid var(--line);border-radius:7px;background:var(--card);padding:4px;}
   .varcard.sel{border-color:var(--gold);box-shadow:0 2px 8px rgba(139,20,20,.12);}
   .varcard .vthumb{position:relative;width:100%;aspect-ratio:16/9;container-type:inline-size;background:#fff;border-radius:4px;overflow:hidden;}
+  .varcard .vthumb.a4thumb{aspect-ratio:595/842;}
   .vcap{font-size:10px;font-weight:600;color:var(--dmaroon);text-align:center;margin-top:3px;}
 
   .empty{color:var(--muted);font-style:italic;padding:14px 6px;text-align:center;}
@@ -168,6 +184,7 @@
 <script src="a4-blocks.js"></script>
 <script src="a4-cover.js"></script>
 <script src="a4-story.js"></script>
+<script src="a4-data.js"></script>
 <script>OWOF.init();</script>
 </body>
 </html>

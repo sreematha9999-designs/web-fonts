@@ -280,6 +280,10 @@ function slideLabel(s){ return s.name || s.title || s.sectionTitle || typeLabel(
 function miniPreview(host, slide){
   host.innerHTML = "";
   /* check both registries — landscape first, then A4 */
+  var isA4 = !!(OWOF.a4Templates && OWOF.a4Templates[slide.type]);
+  /* toggle portrait aspect-ratio class on the thumbnail container */
+  if(isA4){ host.classList.add("a4thumb"); }
+  else     { host.classList.remove("a4thumb"); }
   const def = OWOF.templates[slide.type] || (OWOF.a4Templates && OWOF.a4Templates[slide.type]);
   if(!def || !def.preview){
     const p = document.createElement("div"); p.className = "pvempty";
@@ -409,15 +413,16 @@ function renderPreview(){
   const s = OWOF.slides[OWOF.selected];
   /* check both registries */
   const def = s && (OWOF.templates[s.type] || (OWOF.a4Templates && OWOF.a4Templates[s.type]));
+  var isA4type = !!(s && OWOF.a4Templates && OWOF.a4Templates[s.type]);
+  /* switch aspect ratio via CSS class — the class overrides the default 16/9 in stylesheet */
+  if(isA4type){ host.classList.add("a4pv"); }
+  else         { host.classList.remove("a4pv"); }
   if(!s || !def){
     const p = document.createElement("div"); p.className = "pvempty";
     p.textContent = s ? "No preview — template not installed." : "Preview appears here.";
     host.appendChild(p);
   } else {
     host.style.background = "#"+H.TH.CREAM;
-    /* Switch preview aspect ratio: A4 types use portrait (9/16 * 8.268/11.693 ≈ 0.562 * 0.707 = 0.398 → use aspect-ratio 595/842) */
-    var isA4type = !!(OWOF.a4Templates && OWOF.a4Templates[s.type]);
-    host.style.aspectRatio = isA4type ? "595 / 842" : "16 / 9";
     try{ def.preview(s, host, H); }catch(e){ console.warn("preview err:",e.message); host.innerHTML='<div class="pvempty">preview error: '+e.message+'</div>'; }
   }
   renderVariants();

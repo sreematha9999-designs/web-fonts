@@ -186,7 +186,7 @@ OWOF.registerA4Template({
         display:"flex", overflow:"hidden", padding:"0 1%",
         alignItems:  o.va==="middle"?"center": o.va==="bottom"?"flex-end":"flex-start",
         justifyContent: o.align==="center"?"center": o.align==="right"?"flex-end":"flex-start",
-        fontSize: (o.size||8)*(w/PW*100/100)+"cqw",
+        fontSize: ((o.size||8)*0.138)+"cqw",
         fontWeight: o.bold?"700":"400",
         fontStyle:  o.italic?"italic":"normal",
         color: "#"+(o.color||TH.INK),
@@ -200,7 +200,7 @@ OWOF.registerA4Template({
     box(0,0,PW,0.52,TH.MAROON);
     box(0,0.49,PW,0.03,TH.GOLD);
     // Logo chip placeholder (white circle top-right)
-    var chip = box(7.1,0.06,0.82,0.38,null,{borderRadius:"50%",border:"1.5px solid #C9A227",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:"0.45cqw",fontWeight:"700",color:"#8B1414",fontFamily:"Arial,sans-serif",lineHeight:"1.1",padding:"2%",boxSizing:"border-box"});
+    var chip = box(7.1,0.06,0.82,0.38,null,{borderRadius:"50%",border:"1.5px solid #C9A227",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:"0.62cqw",fontWeight:"700",color:"#8B1414",fontFamily:"Arial,sans-serif",lineHeight:"1.1",padding:"2%",boxSizing:"border-box"});
     chip.textContent="ONE WORLD\nONE FAMILY\nMISSION";
 
     txt(0.55,0.09,5.8,0.35, s.sectionTitle||"Financial Summary",
@@ -379,7 +379,7 @@ OWOF.registerA4Template({
       var legDiv = box(rightX, chartY+chartH+0.05, rightW, 0.20, null, {display:"flex",gap:"8%",alignItems:"center"});
       [{c:"C9A227",t:"Budget"},{c:"8B1414",t:"Spent"}].forEach(function(lc){
         var d = document.createElement("div");
-        d.style.cssText="display:flex;align-items:center;gap:4px;font-size:0.6cqw;color:#"+TH.INK;
+        d.style.cssText="display:flex;align-items:center;gap:4px;font-size:0.85cqw;color:#"+TH.INK;
         var sq = document.createElement("div");
         sq.style.cssText="width:10px;height:10px;background:#"+lc.c+";border-radius:2px;flex-shrink:0";
         d.appendChild(sq);
